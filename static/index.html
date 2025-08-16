@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Price Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .predicted-price {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .confidence {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .model-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .model-info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .feature-importance {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .feature-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .sample-data-btn {
+            background: #28a745;
+            margin-top: 10px;
+        }
+
+        .sample-data-btn:hover {
+            background: #218838;
+        }
+
+        .prediction-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .prediction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .prediction-number {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .prediction-time {
+            font-style: italic;
+        }
+
+        .prediction-details {
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .prediction-price {
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 5px;
+        }
+
+        .prediction-confidence {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .prediction-inputs {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        .clear-predictions-btn {
+            background: #dc3545;
+            margin-top: 20px;
+        }
+
+        .clear-predictions-btn:hover {
+            background: #c82333;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .predicted-price {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Crypto Price Predictor</h1>
+            <p>Predict cryptocurrency prices using machine learning</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>📊 Input Data</h2>
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label for="open">Open Price ($)</label>
+                        <input type="number" id="open" name="open" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="high">High Price ($)</label>
+                        <input type="number" id="high" name="high" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="low">Low Price ($)</label>
+                        <input type="number" id="low" name="low" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="volume">Volume</label>
+                        <input type="number" id="volume" name="volume" step="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="market_cap">Market Cap ($)</label>
+                        <input type="number" id="market_cap" name="market_cap" step="1" required>
+                    </div>
+                    <button type="submit" class="btn">🔮 Predict Price</button>
+                    <button type="button" class="btn sample-data-btn" onclick="loadSampleData()">📋 Load Sample Data</button>
+                </form>
+            </div>
+
+            <div class="card result-card">
+                <h2>🎯 Prediction Result</h2>
+                <div id="status" class="status info">
+                    Enter data and click "Predict Price" to get started
+                </div>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing market data...</p>
+                </div>
+                <div id="result" style="display: none;">
+                    <div class="predicted-price" id="predictedPrice">$0.00</div>
+                    <div class="confidence" id="confidence">Confidence: 0%</div>
+                    <div id="inputSummary"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🤖 Model Information</h2>
+            <div id="modelInfo" class="model-info">
+                <p>Loading model information...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💾 Saved Predictions</h2>
+            <div id="predictionsList" class="prediction-item">
+                <p>Loading predictions...</p>
+            </div>
+            <button type="button" class="btn clear-predictions-btn" onclick="clearPredictions()">Clear All Predictions</button>
+        </div>
+    </div>
+
+    <script>
+        // API base URL
+        const API_BASE = window.location.origin;
+
+        // Handle form submission
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            predictPrice();
+        });
+
+        async function predictPrice() {
+            const form = document.getElementById('predictionForm');
+            const formData = new FormData(form);
+            
+            const data = {
+                open: parseFloat(formData.get('open')),
+                high: parseFloat(formData.get('high')),
+                low: parseFloat(formData.get('low')),
+                volume: parseFloat(formData.get('volume')),
+                market_cap: parseFloat(formData.get('market_cap'))
+            };
+
+            showLoading(true);
+
+            try {
+                console.log('Making prediction request to:', `${API_BASE}/api/predict`);
+                console.log('Request data:', data);
+                
+                const response = await fetch(`${API_BASE}/api/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Prediction response status:', response.status);
+                console.log('Prediction response headers:', Object.fromEntries(response.headers.entries()));
+
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                console.log('Prediction Content-Type header:', contentType);
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Invalid content type for prediction:', contentType);
+                    throw new Error('Server returned non-JSON response');
+                }
+
+                const result = await response.json();
+                console.log('Parsed prediction result:', result);
+
+                if (response.ok) {
+                    displayResult(result);
+                    updateStatus('Prediction completed successfully!', 'success');
+                    loadPredictions(); // Refresh predictions list after new prediction
+                } else {
+                    updateStatus(`Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error making prediction:', error);
+                updateStatus(`Network error: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResult(result) {
+            const resultDiv = document.getElementById('result');
+            const predictedPriceDiv = document.getElementById('predictedPrice');
+            const confidenceDiv = document.getElementById('confidence');
+            const inputSummaryDiv = document.getElementById('inputSummary');
+
+            predictedPriceDiv.textContent = `$${result.predicted_price.toLocaleString()}`;
+            confidenceDiv.textContent = `Confidence: ${result.confidence}%`;
+
+            const inputFeatures = result.input_features;
+            inputSummaryDiv.innerHTML = `
+                <h4>Input Summary:</h4>
+                <p>Open: $${inputFeatures.open.toLocaleString()}</p>
+                <p>High: $${inputFeatures.high.toLocaleString()}</p>
+                <p>Low: $${inputFeatures.low.toLocaleString()}</p>
+                <p>Volume: ${inputFeatures.volume.toLocaleString()}</p>
+                <p>Market Cap: $${inputFeatures.market_cap.toLocaleString()}</p>
+            `;
+
+            resultDiv.style.display = 'block';
+        }
+
+        async function loadSampleData() {
+            try {
+                console.log('Loading sample data from:', `${API_BASE}/api/sample-data`);
+                const response = await fetch(`${API_BASE}/api/sample-data`);
+                
+                console.log('Sample data response status:', response.status);
+                console.log('Sample data response headers:', Object.fromEntries(response.headers.entries()));
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                console.log('Sample data Content-Type header:', contentType);
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Invalid content type for sample data:', contentType);
+                    throw new Error('Server returned non-JSON response');
+                }
+                
+                const data = await response.json();
+                console.log('Parsed sample data:', data);
+
+                if (response.ok) {
+                    const sampleData = data.sample_data;
+                    document.getElementById('open').value = sampleData.open;
+                    document.getElementById('high').value = sampleData.high;
+                    document.getElementById('low').value = sampleData.low;
+                    document.getElementById('volume').value = sampleData.volume;
+                    document.getElementById('market_cap').value = sampleData.market_cap;
+                    
+                    updateStatus('Sample data loaded successfully!', 'success');
+                } else {
+                    updateStatus(`Error loading sample data: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error loading sample data:', error);
+                updateStatus(`Error loading sample data: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadModelInfo() {
+            try {
+                console.log('Loading model info from:', `${API_BASE}/api/model-info`);
+                const response = await fetch(`${API_BASE}/api/model-info`);
+                
+                console.log('Model info response status:', response.status);
+                console.log('Model info response headers:', Object.fromEntries(response.headers.entries()));
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                console.log('Model info Content-Type header:', contentType);
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Invalid content type for model info:', contentType);
+                    throw new Error('Server returned non-JSON response');
+                }
+                
+                const data = await response.json();
+                console.log('Parsed model info data:', data);
+
+                if (response.ok) {
+                    const modelInfoDiv = document.getElementById('modelInfo');
+                    modelInfoDiv.innerHTML = `
+                        <h3>Model Details</h3>
+                        <p><strong>Type:</strong> ${data.model_type}</p>
+                        <p><strong>Features:</strong> ${data.n_features}</p>
+                        <p><strong>Status:</strong> ${data.model_loaded ? '✅ Loaded' : '❌ Not Loaded'}</p>
+                        
+                        <h4>Feature Importance:</h4>
+                        <div class="feature-importance">
+                            ${Object.entries(data.feature_importance)
+                                .sort(([,a], [,b]) => b - a)
+                                .map(([feature, importance]) => `
+                                    <div class="feature-item">
+                                        <span>${feature}</span>
+                                        <span>${(importance * 100).toFixed(1)}%</span>
+                                    </div>
+                                `).join('')}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('modelInfo').innerHTML = `
+                        <p>Error loading model information: ${data.error}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading model info:', error);
+                document.getElementById('modelInfo').innerHTML = `
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+        }
+
+        function showLoading(show) {
+            const loadingDiv = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            
+            if (show) {
+                loadingDiv.style.display = 'block';
+                resultDiv.style.display = 'none';
+            } else {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        async function loadPredictions() {
+            try {
+                console.log('Loading predictions from:', `${API_BASE}/api/predictions`);
+                const response = await fetch(`${API_BASE}/api/predictions`);
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type header:', contentType);
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Invalid content type:', contentType);
+                    throw new Error('Server returned non-JSON response');
+                }
+                
+                const data = await response.json();
+                console.log('Parsed response data:', data);
+
+                if (response.ok) {
+                    displayPredictions(data.predictions);
+                } else {
+                    updateStatus(`Error loading predictions: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error loading predictions:', error);
+                updateStatus(`Error loading predictions: ${error.message}`, 'error');
+            }
+        }
+
+        function displayPredictions(predictions) {
+            const predictionsDiv = document.getElementById('predictionsList');
+            
+            if (!predictions || predictions.length === 0) {
+                predictionsDiv.innerHTML = '<p>No predictions saved yet.</p>';
+                return;
+            }
+
+            const predictionsHTML = predictions.map((pred, index) => {
+                const timestamp = new Date(pred.timestamp).toLocaleString();
+                const input = pred.input_features;
+                
+                return `
+                    <div class="prediction-item">
+                        <div class="prediction-header">
+                            <span class="prediction-number">#${index + 1}</span>
+                            <span class="prediction-time">${timestamp}</span>
+                        </div>
+                        <div class="prediction-details">
+                            <div class="prediction-price">
+                                <strong>Predicted Price:</strong> $${pred.predicted_price.toLocaleString()}
+                            </div>
+                            <div class="prediction-confidence">
+                                <strong>Confidence:</strong> ${pred.confidence}%
+                            </div>
+                            <div class="prediction-inputs">
+                                <strong>Inputs:</strong> O: $${input.open.toLocaleString()} | 
+                                H: $${input.high.toLocaleString()} | 
+                                L: $${input.low.toLocaleString()} | 
+                                V: ${input.volume.toLocaleString()} | 
+                                MC: $${input.market_cap.toLocaleString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            predictionsDiv.innerHTML = predictionsHTML;
+        }
+
+        async function clearPredictions() {
+            if (!confirm('Are you sure you want to clear all predictions?')) {
+                return;
+            }
+
+            try {
+                console.log('Clearing predictions via:', `${API_BASE}/api/predictions/clear`);
+                const response = await fetch(`${API_BASE}/api/predictions/clear`, {
+                    method: 'DELETE'
+                });
+                
+                console.log('Clear predictions response status:', response.status);
+                console.log('Clear predictions response headers:', Object.fromEntries(response.headers.entries()));
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                console.log('Clear predictions Content-Type header:', contentType);
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Invalid content type for clear predictions:', contentType);
+                    throw new Error('Server returned non-JSON response');
+                }
+                
+                const data = await response.json();
+                console.log('Parsed clear predictions result:', data);
+
+                if (response.ok) {
+                    updateStatus('All predictions cleared successfully!', 'success');
+                    loadPredictions(); // Refresh the predictions list
+                } else {
+                    updateStatus(`Error clearing predictions: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error clearing predictions:', error);
+                updateStatus(`Error clearing predictions: ${error.message}`, 'error');
+            }
+        }
+
+        // Load predictions when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadModelInfo();
+            loadPredictions();
+        });
+    </script>
+</body>
+</html> 
